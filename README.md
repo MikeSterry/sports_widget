@@ -68,8 +68,8 @@ Upcoming with 5 results and a transparent theme?
 	- I did move some stuff around to create more reasonable classes together, but there are things like "handlers" and "model" classes that I think it could use
 	- I don't have a ton of free time to do all of that, so maybe someday I'll get around to shoring that all up
 - I am aware that I'm reusing an element ID for the iframes and I should use a class name...
-- I'm very open to PRs, but I don't have a lot of free time, so feel free to fork it as well. Just let me know if you have something cool I should check out and incorporate it into mine. 
-
+- I'm very open to PRs, but I don't have a lot of free time, so feel free to fork it as well. Just let me know if you have something cool I should check out and incorporate it into mine.
+- The TV Networks stuff could definitely use some love. It's pretty much hardcoded to work for the FanDual North area right now.
 
 
 #### GetHomePage services.yaml example
