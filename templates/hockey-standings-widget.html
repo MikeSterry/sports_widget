@@ -1,0 +1,67 @@
+<!-- templates/widget.html -->
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="/static/widget.css" />
+    <title>MN Wild Ticker</title>
+  </head>
+
+  <body data-theme="{{ theme }}">
+    <div class="ticker">
+
+      <!-- Standings -->
+      {% if standings %}
+      <div class="section standings">
+        <div class="section-title">
+          {{ division }} Division
+        </div>
+
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <th>Team</th>
+              <th>GP</th>
+              <th>W</th>
+              <th>L</th>
+              <th>OT</th>
+              <th>Pts</th>
+              <th>RW</th>
+              <th>ROW</th>
+              <th>Strk</th>
+              <th>+/-</th>
+              <th>GF</th>
+              <th>GA</th>
+              <th>Home</th>
+              <th>Away</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in standings %}
+              <tr class="{% if t.abbr == 'MIN' %}highlight{% endif %}">
+                <td class="team">{{ t.abbr.default }}</td>
+                <td>{{ t.gp }}</td>
+                <td>{{ t.w }}</td>
+                <td>{{ t.l }}</td>
+                <td>{{ t.otl }}</td>
+                <td class="pts">{{ t.pts }}</td>
+                <td>{{ t.rw }}</td>
+                <td>{{ t.row }}</td>
+                <td>{{ t.strk }}</td>
+                <td class="{% if t.dif > 0 %}pos{% elif t.dif < 0 %}neg{% endif %}">
+                  {{ t.dif }}
+                </td>
+                <td>{{ t.gf }}</td>
+                <td>{{ t.ga }}</td>
+                <td>{{ t.home or "—" }}</td>
+                <td>{{ t.away or "—" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </body>
+</html>

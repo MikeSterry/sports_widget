@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="/static/widget.css" />
+    <title>MN Wild Ticker</title>
+  </head>
+  <body data-theme="{{ theme }}">
+    <div class="ticker">
+
+      <div class="section">
+        <div class="section-title">Recent</div>
+
+        {% if recent|length == 0 %}
+          <div class="empty">No recent games found.</div>
+        {% endif %}
+
+        {% for g in recent %}
+          <div class="row">
+            <div class="left">
+              <div class="line1">{{ g.date_str }}</div>
+              <div class="line2">{{ g.homeaway }} {{ g.opponent }}</div>
+            </div>
+
+<!--            <div class="right">-->
+<!--              {% if g.score and g.score.startswith('W')%}-->
+<!--                <div class="score win">{{ g.score.split(' ')[0] }} {{ g.score.split(' ')[1] }}</div>-->
+<!--              {% elif g.score and g.score.startswith('L')%}-->
+<!--                <div class="score loss">{{ g.score.split(' ')[0] }} {{ g.score.split(' ')[1] }}</div>-->
+<!--              {% else %}-->
+<!--                <div class="score muted">Score: n/a</div>-->
+<!--              {% endif %}-->
+<!--            </div>-->
+            <div class="right">
+              {% if g.score %}
+                {% set first = g.score[0] %}
+                {% set rest = g.score[1:] %}
+                <div class="score">
+                  <span class="
+                    {% if first == 'W' %}win-letter{% elif first == 'L' %}loss-letter{% endif %}
+                  ">
+                    {{ first }}
+                  </span>{{ rest }}
+                </div>
+              {% else %}
+                <div class="score muted">Score: n/a</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </body>
+</html>

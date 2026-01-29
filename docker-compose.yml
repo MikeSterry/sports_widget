@@ -1,0 +1,19 @@
+---
+services:
+  mnwild-ticker:
+    image: mnwild-ticker:latest
+    container_name: mnwild-ticker
+    build:
+      context: .
+    environment:
+      - TZ=America/Chicago
+      - TEAM_CODE=MIN
+      - DEFAULT_DIVISION=central
+      - CACHE_TTL_SECONDS=60
+      - STANDINGS_CACHE_TTL_SECONDS=60
+      - LIMIT_UPCOMING=5
+      - LIMIT_RECENT=5
+      - PORT=8000
+    ports:
+      - "8005:8000"
+    restart: unless-stopped
