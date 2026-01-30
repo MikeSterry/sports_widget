@@ -57,12 +57,20 @@
             </div>
             <div class="right score-inline">
               {% if g.score %}
-                <span class="wl
-                  {% if g.result == 'W' %}wl-win{% elif g.result == 'L' %}wl-loss{% else %}wl-muted{% endif %}
-                ">
-                  {{ g.result or "—" }}
-                </span>
-                <span class="score-num">{{ g.score }}</span>
+                {% if g.is_live %}
+                  <span class="live-pill">
+                    <span class="live-dot"></span>
+                    LIVE{% if g.live_label %} {{ g.live_label }}{% endif %}
+                  </span>
+                  <span class="score-num">{{ g.score }}</span>
+                {% else %}
+                  <span class="wl
+                    {% if g.result == 'W' %}wl-win{% elif g.result == 'L' %}wl-loss{% else %}wl-muted{% endif %}
+                  ">
+                    {{ g.result or "—" }}
+                  </span>
+                  <span class="score-num">{{ g.score }}</span>
+                {% endif %}
               {% else %}
                 <div class="score muted">Score: n/a</div>
               {% endif %}

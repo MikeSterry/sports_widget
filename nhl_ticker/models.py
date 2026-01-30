@@ -23,7 +23,10 @@ class Game:
     game_id: str
     date_key: str   # YYYY-MM-DD local
     networks: Sequence[str]
-    result: str = ""  # NEW: "W" | "L" | "" (blank when not final/unknown)
+    result: str = ""          # "W" | "L" | "" (only meaningful for finals)
+    is_live: bool = False     # NEW
+    is_final: bool = False    # NEW
+    live_label: str = ""      # NEW (e.g., "P2 12:34", "INT", "SO", etc.)
 
 
 @dataclass(frozen=True)

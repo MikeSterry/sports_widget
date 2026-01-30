@@ -375,10 +375,13 @@ class GamesService:
         # Fallback: unknown orientation
         return None, None
 
-    def _result_code(self, game: Dict[str, Any]) -> str:
+    def _result_code(self, game: Dict[str, Any], is_final: bool) -> str:
         """
-        Return "W" or "L" when a game has a decided score, otherwise "".
+        Return "W" or "L" only for finals. Otherwise "".
         """
+        if not is_final:
+            return ""
+
         wild, opp = self._get_team_scores(game)
         if wild is None or opp is None:
             return ""
@@ -407,7 +410,9 @@ class GamesService:
                 continue
 
             opp, ha = self._opponent_and_homeaway(g)
-            state = self._game_state(g)
+            state = self._normalize_state(g)
+            is_live = self._is_live_state(state)
+            is_final = self._is_final_state(state)
             score = self._score_line(g)
             game_id = str(g.get("id") or g.get("gameId") or g.get("gamePK") or "")
 
@@ -419,6 +424,8 @@ class GamesService:
                 "opponent": opp,
                 "homeaway": ha,
                 "state": state,
+                "is_live": is_live,
+                "is_final": is_final,
                 "score": score,
                 "game_id": game_id,
                 "date_key": dt.strftime("%Y-%m-%d"),
@@ -460,7 +467,9 @@ class GamesService:
                     game_id=x["game_id"],
                     date_key=x["date_key"],
                     networks=display_nets,
-                    result="",  # optional
+                    live_label=self._extract_live_label(raw) if is_live else "",
+                    result=self._result_code(raw, is_final=is_final),
+
                 )
             )
 
@@ -476,9 +485,106 @@ class GamesService:
                 game_id=x["game_id"],
                 date_key=x["date_key"],
                 networks=(),
-                result=self._result_code(x["raw"]),  # NEW
+                is_live=bool(x["is_live"]),
+                is_final=bool(x["is_final"]),
+                live_label=self._extract_live_label(x["raw"]) if x["is_live"] else "",
+                result=self._result_code(x["raw"], is_final=bool(x["is_final"])),
             )
             for x in recent_raw
         ]
 
         return upcoming, recent
+
+    def _normalize_state(self, game: Dict[str, Any]) -> str:
+        """
+        Normalize the game state into a consistent uppercase token.
+
+        We try multiple keys because NHL payloads vary.
+        """
+        for key in ("gameState", "gameScheduleState", "gameStatus", "state"):
+            v = game.get(key)
+            if isinstance(v, str) and v.strip():
+                return v.strip().upper()
+        return ""
+
+    def _is_live_state(self, state: str) -> bool:
+        """
+        Return True if state indicates the game is currently in progress.
+
+        This is best-effort; NHL can use variants across endpoints.
+        """
+        s = (state or "").upper()
+        return s in ("LIVE", "IN_PROGRESS", "INPROGRESS", "ACTIVE", "CRIT", "CRITICAL", "ONGOING")
+
+    def _is_final_state(self, state: str) -> bool:
+        """Return True if state indicates the game has ended."""
+        s = (state or "").upper()
+        return s in ("FINAL", "OFF", "COMPLETED", "DONE", "FINISHED")
+
+    def _extract_live_label(self, game: Dict[str, Any]) -> str:
+        """
+        Build a compact label for live games like:
+          - "P2 12:34"
+          - "INT"
+          - "SO"
+          - "OT 3:21"
+
+        This is best-effort based on common NHL fields.
+        """
+        # Common patterns:
+        # - game["clock"]["timeRemaining"] or ["timeRemaining"]
+        # - game["clock"]["running"]
+        # - game["periodDescriptor"]["number"] or game["period"]
+        # - game["periodDescriptor"]["periodType"] (REG/OT/SO)
+        clock = game.get("clock") or {}
+        time_left = None
+        if isinstance(clock, dict):
+            time_left = clock.get("timeRemaining") or clock.get("timeRemainingInPeriod")
+
+        # Some payloads use direct keys
+        if not time_left:
+            time_left = game.get("timeRemaining") or game.get("timeRemainingInPeriod")
+
+        pd = game.get("periodDescriptor") or {}
+        period_num = None
+        period_type = None
+        if isinstance(pd, dict):
+            period_num = pd.get("number") or pd.get("periodNumber")
+            period_type = pd.get("periodType") or pd.get("type")
+
+        if period_num is None:
+            period_num = game.get("period") or game.get("currentPeriod")
+
+        if not period_type:
+            period_type = game.get("periodType")
+
+        # Intermission flag sometimes exists
+        in_int = game.get("inIntermission")
+        if in_int is None and isinstance(clock, dict):
+            in_int = clock.get("inIntermission")
+
+        if in_int is True:
+            return "INT"
+
+        # Determine period prefix
+        pt = (str(period_type).upper() if period_type is not None else "")
+        if pt in ("SO", "SHOOTOUT"):
+            return "SO"
+        if pt in ("OT", "OVERTIME"):
+            # Some APIs still give a "number" for OT; show OT either way
+            if isinstance(time_left, str) and time_left.strip():
+                return f"OT {time_left.strip()}"
+            return "OT"
+
+        # Default: regulation period number
+        if period_num is not None and str(period_num).isdigit():
+            if isinstance(time_left, str) and time_left.strip():
+                return f"P{period_num} {time_left.strip()}"
+            return f"P{period_num}"
+
+        # If we have time left but no period info
+        if isinstance(time_left, str) and time_left.strip():
+            return time_left.strip()
+
+        return ""
+

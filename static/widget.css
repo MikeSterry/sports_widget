@@ -224,6 +224,28 @@ body {
   font-size: 12px;
 }
 
+/* Live indicator */
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--loss); /* red-ish "LIVE" vibe */
+  letter-spacing: 0.02em;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--loss);
+  box-shadow: 0 0 10px rgba(255, 140, 140, 0.65);
+}
 
 /* =========================
    STANDINGS TABLE
