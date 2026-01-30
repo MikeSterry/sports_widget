@@ -22,27 +22,14 @@
               <div class="line1">{{ g.date_str }}</div>
               <div class="line2">{{ g.homeaway }} {{ g.opponent }}</div>
             </div>
-
-<!--            <div class="right">-->
-<!--              {% if g.score and g.score.startswith('W')%}-->
-<!--                <div class="score win">{{ g.score.split(' ')[0] }} {{ g.score.split(' ')[1] }}</div>-->
-<!--              {% elif g.score and g.score.startswith('L')%}-->
-<!--                <div class="score loss">{{ g.score.split(' ')[0] }} {{ g.score.split(' ')[1] }}</div>-->
-<!--              {% else %}-->
-<!--                <div class="score muted">Score: n/a</div>-->
-<!--              {% endif %}-->
-<!--            </div>-->
-            <div class="right">
+            <div class="right score-inline">
               {% if g.score %}
-                {% set first = g.score[0] %}
-                {% set rest = g.score[1:] %}
-                <div class="score">
-                  <span class="
-                    {% if first == 'W' %}win-letter{% elif first == 'L' %}loss-letter{% endif %}
-                  ">
-                    {{ first }}
-                  </span>{{ rest }}
-                </div>
+                <span class="wl
+                  {% if g.result == 'W' %}wl-win{% elif g.result == 'L' %}wl-loss{% else %}wl-muted{% endif %}
+                ">
+                  {{ g.result or "—" }}
+                </span>
+                <span class="score-num">{{ g.score }}</span>
               {% else %}
                 <div class="score muted">Score: n/a</div>
               {% endif %}

@@ -1,4 +1,4 @@
-<!-- templates/widget.html -->
+<!-- templates/hockey/standings.html -->
 <!doctype html>
 <html>
   <head>
@@ -11,7 +11,6 @@
   <body data-theme="{{ theme }}">
     <div class="ticker">
 
-      <!-- Standings -->
       {% if standings %}
       <div class="section standings">
         <div class="section-title">
@@ -37,10 +36,11 @@
               <th>Away</th>
             </tr>
           </thead>
+
           <tbody>
             {% for t in standings %}
               <tr class="{% if t.abbr == 'MIN' %}highlight{% endif %}">
-                <td class="team">{{ t.abbr.default }}</td>
+                <td class="team">{{ t.abbr }}</td>
                 <td>{{ t.gp }}</td>
                 <td>{{ t.w }}</td>
                 <td>{{ t.l }}</td>
@@ -48,7 +48,16 @@
                 <td class="pts">{{ t.pts }}</td>
                 <td>{{ t.rw }}</td>
                 <td>{{ t.row }}</td>
-                <td>{{ t.strk }}</td>
+
+                <td class="strk
+                  {% if t.strk and t.strk.startswith('W') %}strk-win
+                  {% elif t.strk and t.strk.startswith('L') %}strk-loss
+                  {% elif t.strk and (t.strk.startswith('O') or t.strk.startswith('T')) %}strk-ot
+                  {% else %}strk-neutral{% endif %}
+                ">
+                  {{ t.strk }}
+                </td>
+
                 <td class="{% if t.dif > 0 %}pos{% elif t.dif < 0 %}neg{% endif %}">
                   {{ t.dif }}
                 </td>

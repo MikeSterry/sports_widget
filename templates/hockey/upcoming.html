@@ -23,9 +23,9 @@
               <div class="line2">{{ g.homeaway }} {{ g.opponent }}</div>
             </div>
 
-            <div class="right">
+            <div class="right net-wrap">
               {% if g.networks and g.networks|length > 0 %}
-                <div class="net">{{ g.networks|join(", ") }}</div>
+                <div class="net">{{ g.networks | join(", ") }}</div>
               {% else %}
                 <div class="net muted">TV: unknown</div>
               {% endif %}

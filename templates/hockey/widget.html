@@ -1,11 +1,11 @@
-<!-- templates/widget.html -->
+<!-- templates/hockey/widget.html -->
 <!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <link rel="stylesheet" href="/static/widget.css" />
-    <title>MN Wild Ticker</title>
+    <div class="title">{{ team_code or "MN Wild" }}</div>
   </head>
 
   <body data-theme="{{ theme }}">
@@ -30,7 +30,7 @@
               <div class="line2">{{ g.homeaway }} {{ g.opponent }}</div>
             </div>
 
-            <div class="right">
+            <div class="right net-wrap">
               {% if g.networks and g.networks|length > 0 %}
                 <div class="net">{{ g.networks|join(", ") }}</div>
               {% else %}
@@ -55,18 +55,14 @@
               <div class="line1">{{ g.date_str }}</div>
               <div class="line2">{{ g.homeaway }} {{ g.opponent }}</div>
             </div>
-
-            <div class="right">
+            <div class="right score-inline">
               {% if g.score %}
-                {% set first = g.score[0] %}
-                {% set rest = g.score[1:] %}
-                <div class="score">
-                  <span class="
-                    {% if first == 'W' %}win-letter{% elif first == 'L' %}loss-letter{% endif %}
-                  ">
-                    {{ first }}
-                  </span>{{ rest }}
-                </div>
+                <span class="wl
+                  {% if g.result == 'W' %}wl-win{% elif g.result == 'L' %}wl-loss{% else %}wl-muted{% endif %}
+                ">
+                  {{ g.result or "—" }}
+                </span>
+                <span class="score-num">{{ g.score }}</span>
               {% else %}
                 <div class="score muted">Score: n/a</div>
               {% endif %}
@@ -104,7 +100,7 @@
           <tbody>
             {% for t in standings %}
               <tr class="{% if t.abbr == 'MIN' %}highlight{% endif %}">
-                <td class="team">{{ t.abbr.default }}</td>
+                <td class="team">{{ t.abbr }}</td>
                 <td>{{ t.gp }}</td>
                 <td>{{ t.w }}</td>
                 <td>{{ t.l }}</td>
@@ -112,7 +108,16 @@
                 <td class="pts">{{ t.pts }}</td>
                 <td>{{ t.rw }}</td>
                 <td>{{ t.row }}</td>
-                <td>{{ t.strk }}</td>
+
+                <td class="strk
+                  {% if t.strk and t.strk.startswith('W') %}strk-win
+                  {% elif t.strk and t.strk.startswith('L') %}strk-loss
+                  {% elif t.strk and (t.strk.startswith('O') or t.strk.startswith('T')) %}strk-ot
+                  {% else %}strk-neutral{% endif %}
+                ">
+                  {{ t.strk }}
+                </td>
+
                 <td class="{% if t.dif > 0 %}pos{% elif t.dif < 0 %}neg{% endif %}">
                   {{ t.dif }}
                 </td>

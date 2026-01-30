@@ -1,19 +1,86 @@
----
+version: "3.9"
+
 services:
-  mnwild-ticker:
-    image: mnwild-ticker:latest
-    container_name: mnwild-ticker
+  sports-widget:
+    container_name: sports-widget
+    image: sports-widget:latest
     build:
       context: .
-    environment:
-      - TZ=America/Chicago
-      - TEAM_CODE=MIN
-      - DEFAULT_DIVISION=central
-      - CACHE_TTL_SECONDS=60
-      - STANDINGS_CACHE_TTL_SECONDS=60
-      - LIMIT_UPCOMING=5
-      - LIMIT_RECENT=5
-      - PORT=8000
+      dockerfile: Dockerfile
+
+    restart: always
+
     ports:
-      - "8005:8000"
-    restart: unless-stopped
+      - "8000:8000"
+
+    environment:
+      # --------------------
+      # Core app config
+      # --------------------
+      TZ: America/Chicago
+      PORT: 8000
+
+      NHL_API_BASE: https://api-web.nhle.com
+      TEAM_CODE: MIN
+
+      # --------------------
+      # Widget defaults
+      # --------------------
+      LIMIT_UPCOMING: 8
+      LIMIT_RECENT: 5
+      DEFAULT_DIVISION: Central
+
+      # --------------------
+      # Cache TTLs (seconds)
+      # --------------------
+      CACHE_TTL_SECONDS: 60
+      STANDINGS_CACHE_TTL_SECONDS: 300
+
+      # --------------------
+      # Network display config
+      # --------------------
+      PREFERRED_NETWORK_NAMES: >
+        TNT,
+        TruTV,
+        ESPN*,
+        FDSN*,
+        FDS*,
+        Prime*,
+        ESPN Select
+
+      NETWORK_NAME_PATTERNS: >
+        FDS*=FanDuel Sports North;
+        ESPN*=ESPN;
+        Prime*=Prime Video
+
+    # --------------------
+    # Hardening
+    # --------------------
+    read_only: true
+
+    # Give the container a few writable in-memory locations.
+    # Many Python libs and gunicorn are happiest if /tmp exists & is writable.
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid,nodev
+      - /run:size=16m,noexec,nosuid,nodev
+
+    # If your environment ever needs it (rare here), you can also add:
+    #   - /var/tmp:size=64m,noexec,nosuid,nodev
+
+    # Prevent privilege escalation
+    security_opt:
+      - no-new-privileges:true
+
+    # Drop Linux capabilities (good default for simple web services)
+    cap_drop:
+      - ALL
+
+    # Optional: limit the container from writing logs/files by enforcing a small /tmp etc.
+    # (Already handled above via tmpfs sizes)
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
