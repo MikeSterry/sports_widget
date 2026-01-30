@@ -117,30 +117,50 @@ def create_app() -> Flask:
         """
         Return a cached registry of valid NHL team codes and display names.
 
-        Source of truth: NHL standings payload (/v1/standings/now).
-        Cache TTL: 24 hours (team codes don’t change often).
+        IMPORTANT:
+          - If the NHL endpoint fails, we return an empty registry but DO NOT
+            cache it for a long time (short TTL), so it can recover quickly.
         """
+
         def loader():
             payload = client.standings_now()
             return _extract_team_info_from_standings(payload)
 
-        # Cache entry holds (set_of_codes, dict_of_names)
-        return cache.get_or_set("nhl:team_registry", ttl_seconds=60 * 60 * 24, loader=loader)
+        # Try normal cached load
+        codes, names = cache.get_or_set(
+            "nhl:team_registry",
+            ttl_seconds=60 * 60 * 24,  # 24h
+            loader=loader,
+        )
+
+        # If we somehow got an empty registry, refresh more frequently.
+        # (Prevents "cached broken state" for a whole day.)
+        if not codes:
+            codes, names = cache.get_or_set(
+                "nhl:team_registry:retry",
+                ttl_seconds=60,  # retry every 60s until it works
+                loader=loader,
+            )
+
+        return codes, names
 
     def get_team_code() -> str:
         """
-        Read ?team=XXX and validate it against the NHL registry.
+        Read ?team=XXX and validate.
 
-        Falls back to configured TEAM_CODE if:
-          - param missing
-          - malformed
-          - not found in registry
+        If the registry is available, validate against it.
+        If registry is unavailable/empty, allow any 3-letter code.
         """
         raw = (request.args.get("team") or cfg.team_code).strip().upper()
         if not TEAM_RE.match(raw):
             return cfg.team_code
 
         valid_codes, _ = get_team_registry()
+
+        # Registry unavailable => accept any 3-letter code so query params still work
+        if not valid_codes:
+            return raw
+
         return raw if raw in valid_codes else cfg.team_code
 
     def get_team_display_name(team_code: str) -> str:
