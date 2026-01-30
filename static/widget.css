@@ -297,6 +297,15 @@ body[data-theme="light"] {
   --line: #d1d5db;
 }
 
+body[data-theme="dark"] {
+  --bg: #0f1115;
+  --panel: #151821;
+  --text: #e6e8ee;
+  --muted: #9aa0b3;
+  --line: #2a2f45;
+}
+
+
 body[data-theme="transparent"] {
   --bg: transparent !important;
   --panel: rgba(255, 255, 255, 0.06);
@@ -312,5 +321,10 @@ body[data-theme="transparent"] {
 html[data-theme="transparent"],
 body[data-theme="transparent"] {
   background: transparent !important;
+}
+
+html[data-theme="dark"],
+body[data-theme="dark"] {
+  background: #0f1115 !important;
 }
 
