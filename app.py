@@ -46,6 +46,60 @@ from nhl_ticker.services.standings_service import StandingsService
 
 TEAM_RE = re.compile(r"^[A-Z]{3}$")
 
+NHL_TEAM_NAMES = {
+    "ANA": "Anaheim Ducks",
+    "ARI": "Arizona Coyotes",
+    "BOS": "Boston Bruins",
+    "BUF": "Buffalo Sabres",
+    "CGY": "Calgary Flames",
+    "CAR": "Carolina Hurricanes",
+    "CHI": "Chicago Blackhawks",
+    "COL": "Colorado Avalanche",
+    "CBJ": "Columbus Blue Jackets",
+    "DAL": "Dallas Stars",
+    "DET": "Detroit Red Wings",
+    "EDM": "Edmonton Oilers",
+    "FLA": "Florida Panthers",
+    "LAK": "Los Angeles Kings",
+    "MIN": "Minnesota Wild",
+    "MTL": "Montreal Canadiens",
+    "NSH": "Nashville Predators",
+    "NJD": "New Jersey Devils",
+    "NYI": "New York Islanders",
+    "NYR": "New York Rangers",
+    "OTT": "Ottawa Senators",
+    "PHI": "Philadelphia Flyers",
+    "PIT": "Pittsburgh Penguins",
+    "SJS": "San Jose Sharks",
+    "SEA": "Seattle Kraken",
+    "STL": "St. Louis Blues",
+    "TBL": "Tampa Bay Lightning",
+    "TOR": "Toronto Maple Leafs",
+    "VAN": "Vancouver Canucks",
+    "VGK": "Vegas Golden Knights",
+    "WSH": "Washington Capitals",
+    "WPG": "Winnipeg Jets",
+}
+
+# Team branding defaults for the banner (bg, text, accent, and font)
+TEAM_BRANDING = {
+    # Minnesota Wild
+    "MIN": {
+        "bg": "linear-gradient(90deg, #154734 0%, #0b2f25 100%)",  # Wild green gradient
+        "fg": "rgba(255,255,255,0.95)",
+        "accent": "#A6192E",  # Wild red
+        "font_family": '"Oswald", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        "font_href": "https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap",
+    },
+}
+
+DEFAULT_BRANDING = {
+    "bg": "linear-gradient(90deg, #111827 0%, #0b1220 100%)",
+    "fg": "rgba(255,255,255,0.92)",
+    "accent": "rgba(255,255,255,0.25)",
+    "font_family": 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    "font_href": "",
+}
 
 def create_app() -> Flask:
     """
@@ -165,10 +219,16 @@ def create_app() -> Flask:
 
     def get_team_display_name(team_code: str) -> str:
         """
-        Return a best-effort team display name for headers.
+        Return the full NHL team name.
 
-        If not found, returns the team_code.
+        Priority:
+          1. Canonical hard-coded map (guaranteed correctness)
+          2. NHL standings payload (best-effort)
+          3. Team code fallback
         """
+        if team_code in NHL_TEAM_NAMES:
+            return NHL_TEAM_NAMES[team_code]
+
         _, names = get_team_registry()
         return names.get(team_code, team_code)
 
@@ -391,6 +451,52 @@ def create_app() -> Flask:
         ctx["highlight_team"] = team_code
 
         return render_template("hockey/standings.html", theme=theme, **ctx)
+
+    ## -------------------------
+    # Hockey Banner widget
+    # -------------------------
+
+    @app.get("/widget/hockey/banner")
+    def widget_hockey_banner():
+        """
+        Render a simple team banner widget.
+
+        Query:
+          - bg: CSS color/gradient for background (optional)
+          - logo: URL to team logo image (optional)
+          - team: NHL team code (optional, controls name + auto-colors)
+          - height: banner height in px (optional)
+        """
+        team_code = get_team_code()
+        team_name = get_team_display_name(team_code)
+
+        branding = TEAM_BRANDING.get(team_code, DEFAULT_BRANDING)
+
+        bg_param = request.args.get("bg")
+        bg = (bg_param.strip() if isinstance(bg_param, str) and bg_param.strip() else branding["bg"])
+
+        logo = (request.args.get("logo") or "").strip()
+        if logo and not logo.startswith(("http://", "https://")):
+            logo = ""
+
+        height_raw = request.args.get("height", "64")
+        try:
+            height_px = int(height_raw)
+        except Exception:
+            height_px = 64
+
+        return render_template(
+            "hockey/banner.html",
+            bg=bg,
+            fg=branding["fg"],
+            accent=branding["accent"],
+            font_family=branding["font_family"],
+            font_href=branding["font_href"],
+            height=height_px,
+            logo=logo,
+            team_code=team_code,
+            team_name=team_name,
+        )
 
     # -------------------------
     # Hockey JSON routes
