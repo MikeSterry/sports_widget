@@ -213,8 +213,14 @@ def create_app() -> Flask:
     # -------------------------
 
     def parse_theme() -> str:
-        """Parse theme query param with a safe default."""
-        return (request.args.get("theme") or "dark").strip().lower()
+        """
+        Parse theme query param with a safe default.
+        Supports: dark, light, transparent
+        """
+        theme = (request.args.get("theme") or "dark").strip().lower()
+        if theme not in ("dark", "light", "transparent"):
+            theme = "dark"
+        return theme
 
     def parse_int(name: str, default: int) -> int:
         """Parse an integer query param with default fallback."""
